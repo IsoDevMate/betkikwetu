@@ -1,7 +1,7 @@
 
 import './App.css';
-import ButtonComponent from './components/button';
-import FloatInput from './componens/input';
+import ButtonComponent from './components/button.jsx';
+import FloatInput from './components/input';
 
 function App() {
   return (
