@@ -8,7 +8,7 @@ const ButtonComponent = () => {
     setIsGreen(true);
     setTimeout(() => {
       setIsGreen(false);
-    }, 2000);
+    }, 1000);
   };
 
   return (

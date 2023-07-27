@@ -1,7 +1,7 @@
 
 import './App.css';
-import ButtonComponent from './components/button.jsx';
-import FloatInput from './components/input';
+import ButtonComponent from './components/buttons.tsx';
+/* import FloatInput from './components/input'; */
 
 function App() {
   return (
@@ -9,8 +9,6 @@ function App() {
       <ButtonComponent />
       <ButtonComponent />
       <ButtonComponent />
-      <br />
-      <FloatInput />
     </div>
   );
 }
