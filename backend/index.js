@@ -7,7 +7,7 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const apiKey = 'e3967818a31ad9f25447f8862c19925e';
+const apiKey = process.env.API_KEY;
 const sportKey = 'upcoming';
 const regions = 'uk';
 const markets = 'h2h';
