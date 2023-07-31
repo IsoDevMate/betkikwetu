@@ -1,9 +1,15 @@
 const axios = require('axios');
 const express = require('express');
 require('dotenv').config();
+const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 5000;
+const bodyParser = require('body-parser');
 
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
