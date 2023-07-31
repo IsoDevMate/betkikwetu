@@ -1,7 +1,6 @@
-
 import './App.css';
-import ButtonComponent from './components/buttons.tsx';
-/* import FloatInput from './components/input'; */
+import ButtonComponent from './components/button.jsx';
+
 
 function App() {
   return (

@@ -1,0 +1,25 @@
+/* i wnat mybutton to ocuppy all the space from left to right with padding 10 px from both mobile view end their background to be grey 
+the page background to be whitish grey  */
+
+*{
+  
+  margin: auto;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+
+.App {
+  text-align: center;
+  padding: 20px;
+}
+
+button {
+  margin: 5px;
+ 
+  color: #f1ecec;
+}
