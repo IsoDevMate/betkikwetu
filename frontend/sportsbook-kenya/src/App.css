@@ -18,8 +18,16 @@ the page background to be whitish grey  */
   padding: 20px;
 }
 
-button {
+.App button {
   margin: 5px;
  
-  color: #f1ecec;
+  color: #000;
+  background: white;
+  padding: 1rem 1.5rem;
+}
+
+.App .outcome{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
