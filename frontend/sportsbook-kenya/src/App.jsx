@@ -1,13 +1,11 @@
 import './App.css';
-import ButtonComponent from './components/button.jsx';
+import Home from './components/home';
 
 
 function App() {
   return (
     <div className="App">
-      <ButtonComponent />
-      <ButtonComponent />
-      <ButtonComponent />
+      <Home />
     </div>
   );
 }
