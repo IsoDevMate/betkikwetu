@@ -1,37 +1,22 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import OddsRow from "../components/oddsRow"
 
 const Home = () => {
-  const [isGreen, setIsGreen] = useState(false);
   const [odds, setOdds] = useState([]);
 
   useEffect(() => {
-    getOdds();
+    // Create a WebSocket connection
+    const socket = new WebSocket('ws://localhost:5000');
+
+    // Event listener for the 'message' event
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setOdds(data);
+    };
+
+    // Cleanup function to close the WebSocket connection when the component unmounts
+   // return () => socket.close();
   }, []);
-
-  const getOdds = () => {
-    axios
-      .get("http://localhost:5000/odds") 
-      .then((response) => {
-        console.log(response.data);
-        setOdds(response.data ?? []);
-        console.log(
-          "text",
-          response.data?.[0].bookmakers?.[0]?.markets?.[0]?.outcomes
-        );
-      })
-      .catch((error) => {
-        console.error("Error fetching odds:", error);
-      });
-  };
-
-  //   const handleButtonClick = () => {
-  //     setIsGreen(true);
-  //     setTimeout(() => {
-  //       setIsGreen(false);
-  //     }, 1000);
-  //   };
 
   return (
     <div>

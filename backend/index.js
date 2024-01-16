@@ -7,6 +7,15 @@ const port = process.env.PORT || 5000;
 const bodyParser = require('body-parser');
 var prettyjson = require('prettyjson');
 const schedule = require('node-schedule');
+//const wss = createServerFrom(http)
+const {createServer} = require('http')
+const {createServerFrom} = require('wss')
+const http = createServer()
+const WebSocket = require('ws');
+const wss = new WebSocket.Server({ noServer: true });
+
+
+
 
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -21,6 +30,17 @@ var options = {
   stringColor: 'white',
   multilineStringColor: 'cyan'
 };
+
+
+
+// Broadcast function to send data to all connected clients
+function broadcast(data) {
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
+}
 
 const apiKey = process.env.API_KEY;
 const sportKey = 'upcoming';
@@ -94,16 +114,25 @@ const job = schedule.scheduleJob('*/30 * * * * *', fetchData);
 // Your API route to fetch odds on demand
 app.get('/odds', async (req, res) => {
   try {
-    
     const results = await fetchData();
     res.status(200).json(results);
+//broadcast to the front end 
+broadcast(results);
+ 
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch odds' });
   }
 });
 
-app.listen(port, () => {
+http.on('upgrade', (request, socket, head) => {
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit('connection', ws, request);
+  });
+});
+http.on('request', app);
+
+http.listen(port, () => {
   console.log(`Server is running on port: ${port}`);
-})
+});
 
 
