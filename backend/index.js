@@ -116,23 +116,50 @@ app.get('/odds', async (req, res) => {
   try {
     const results = await fetchData();
     res.status(200).json(results);
-//broadcast to the front end 
-broadcast(results);
+    //broadcast to the front end 
+  
  
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch odds' });
   }
 });
 
+// Handle WebSocket connections
+wss.on('connection', (ws) => {
+  console.log('WebSocket client connected');
+
+  // Handle messages from WebSocket clients if needed
+  ws.on('message', (message) => {
+    console.log(`Received message from client: ${message}`);
+  });
+  broadcast(results);
+  // Send a welcome message to the newly connected client
+  ws.send('Welcome to the WebSocket server!');
+});
+
+// HTTP server with WebSocket upgrade support
+const server = createServer(app);
+server.on('upgrade', (request, socket, head) => {
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit('connection', ws, request);
+  });
+});
+
+// Start the HTTP server
+server.listen(port, () => {
+  console.log(`Server is running on port: ${port}`);
+});
+/*
 http.on('upgrade', (request, socket, head) => {
   wss.handleUpgrade(request, socket, head, (ws) => {
     wss.emit('connection', ws, request);
   });
 });
+
 http.on('request', app);
 
 http.listen(port, () => {
   console.log(`Server is running on port: ${port}`);
 });
 
-
+*/
