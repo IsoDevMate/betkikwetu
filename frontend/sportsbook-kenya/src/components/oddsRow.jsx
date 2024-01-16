@@ -6,7 +6,10 @@ const oddsRow = (props) => {
     <div className="outcome">
       {outcomes.length > 2 &&
         outcomes.map((outcome, i) => (
-          <button key={i}>{outcome?.name || "Unnamed Outcome"}</button>
+          <>
+          <label key={i} htmlFor="teams">{outcome?.name || "Unnamed Outcome"}</label>
+          <button key={i}>{outcome?.price || "Unnamed Odds"}</button>
+          </>
         ))}
     </div>
   );
