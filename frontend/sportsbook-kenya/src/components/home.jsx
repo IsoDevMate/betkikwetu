@@ -12,13 +12,13 @@ const Home = () => {
 
   const getOdds = () => {
     axios
-      .get("http://localhost:5000/odds") // Replace the URL with the actual API endpoint
+      .get("http://localhost:5000/odds") 
       .then((response) => {
         console.log(response.data);
         setOdds(response.data ?? []);
         console.log(
           "text",
-          response.data?.[0].bookmakers?.[0]?.markets?.[0]?.outcomes[0]?.name
+          response.data?.[0].bookmakers?.[0]?.markets?.[0]?.outcomes
         );
       })
       .catch((error) => {
