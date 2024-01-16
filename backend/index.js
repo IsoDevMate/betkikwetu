@@ -6,6 +6,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 const bodyParser = require('body-parser');
 var prettyjson = require('prettyjson');
+const schedule = require('node-schedule');
 
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -59,46 +60,50 @@ app.get('/sporty', async (req, res) => {
     }
   }
 });
-
-app.get('/odds', async (req, res) => {
-  try {
-    const response = await axios.get(`https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?limit=2`, {
-      params: {
-        apiKey,
-        regions,
-        markets,
-        oddsFormat,
-        dateFormat,
-      },
-    });
-  
-    let results = response.data.map(game => {
+function fetchData() {
+  return axios.get(`https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?limit=2`, {
+    params: {
+      apiKey,
+      regions,
+      markets,
+      oddsFormat,
+      dateFormat,
+    },
+  })
+  .then(response => {
+    const results = response.data.map(game => {
       game.bookmakers = game.bookmakers.map(bookmaker => {
         bookmaker.markets = bookmaker.markets.filter(market => market.outcomes.length === 3);
         return bookmaker;
       });
       return game;
     });
+
     console.log(prettyjson.render(results, options));
-   // console.log(JSON.stringify(results));
+    return results;
+  })
+  .catch(error => {
+    console.error('Error fetching odds:', error.message);
+    throw error;
+  });
+}
+
+// Schedule a job to run every 30 seconds and fetch data
+const job = schedule.scheduleJob('*/30 * * * * *', fetchData);
+
+// Your API route to fetch odds on demand
+app.get('/odds', async (req, res) => {
+  try {
+    
+    const results = await fetchData();
     res.status(200).json(results);
-
-
-
-
-    // Check your usage
-    // console.log('Remaining requests', response.headers['x-requests-remaining'])
-    // console.log('Used requests', response.headers['x-requests-used'])
   } catch (error) {
-    if (error.response) {
-      console.error(error.response.data);
-      res.status(401).json({ message: 'API key is missing' });
-    } else {
-      console.error("Error is this ", error.message);
-    }
+    res.status(500).json({ error: 'Failed to fetch odds' });
   }
 });
 
 app.listen(port, () => {
   console.log(`Server is running on port: ${port}`);
 })
+
+
