@@ -5,6 +5,7 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 5000;
 const bodyParser = require('body-parser');
+var prettyjson = require('prettyjson');
 
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -12,6 +13,13 @@ app.use(bodyParser.json());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+var options = {
+  keysColor: 'green',
+  dashColor: 'magenta',
+  stringColor: 'white',
+  multilineStringColor: 'cyan'
+};
 
 const apiKey = process.env.API_KEY;
 const sportKey = 'upcoming';
@@ -29,8 +37,18 @@ app.get('/sporty', async (req, res) => {
         apiKey,
       },
     });
-    res.status(200).json(response.data);
-    console.log(response.data);
+   
+    let result= response.data.map(game => {
+      game.bookmakers = game.bookmakers.map(bookmaker => {
+        bookmaker.markets = bookmaker.markets.filter(market => market.outcomes.length === 3);
+        return bookmaker;
+      });
+      return game;
+    });
+    console.log(prettyjson.render(result, options));
+    console.log(JSON.stringify(result));
+    res.status(200).json(result);
+   
   } catch (error) {
     if (error.response) {
       console.error(error.response.data);
@@ -53,8 +71,20 @@ app.get('/odds', async (req, res) => {
         dateFormat,
       },
     });
-    console.log(JSON.stringify(response.data));
-    res.status(200).json(response.data);
+  
+    let results = response.data.map(game => {
+      game.bookmakers = game.bookmakers.map(bookmaker => {
+        bookmaker.markets = bookmaker.markets.filter(market => market.outcomes.length === 3);
+        return bookmaker;
+      });
+      return game;
+    });
+    console.log(prettyjson.render(results, options));
+   // console.log(JSON.stringify(results));
+    res.status(200).json(results);
+
+
+
 
     // Check your usage
     // console.log('Remaining requests', response.headers['x-requests-remaining'])
@@ -64,11 +94,11 @@ app.get('/odds', async (req, res) => {
       console.error(error.response.data);
       res.status(401).json({ message: 'API key is missing' });
     } else {
-      console.error("Error", error.message);
+      console.error("Error is this ", error.message);
     }
   }
 });
 
 app.listen(port, () => {
   console.log(`Server is running on port: ${port}`);
-});
+})
