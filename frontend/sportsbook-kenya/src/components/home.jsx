@@ -61,7 +61,6 @@ const Home = () => {
   return (
     <div>
       <h1>Odds</h1>
-      
         {odds.length > 0 && (
           <ul>
             {odds.map((odd, index) => (
@@ -69,7 +68,6 @@ const Home = () => {
             ))}
           </ul>
         )}
-      
     </div>
   );
 };

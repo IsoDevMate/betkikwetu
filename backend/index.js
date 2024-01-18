@@ -6,14 +6,14 @@ const app = express();
 const port = process.env.PORT || 5000;
 const bodyParser = require('body-parser');
 var prettyjson = require('prettyjson');
-const schedule = require('node-schedule');
+//const schedule = require('node-schedule');
 const {createServer} = require('http')
 const {createServerFrom} = require('wss')
 const http = createServer()
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ noServer: true });
 const { v4: uuidv4 } = require('uuid');
-
+const redis = require('redis');
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -28,6 +28,16 @@ var options = {
   multilineStringColor: 'cyan'
 };
 
+
+let redisClient;
+//self invoked function to connect to redis
+(async () => {
+  redisClient = redis.createClient();
+
+  redisClient.on("error", (error) => console.error(`Error : ${error}`));
+
+  await redisClient.connect();
+})();
 
 
 // Broadcast function to send data to all connected clients
@@ -77,19 +87,43 @@ app.get('/sporty', async (req, res) => {
     }
   }
 });
-function fetchData() {
-  return axios.get(`https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?limit=2`, {
-    params: {
-      apiKey,
-      regions,
-      markets,
-      oddsFormat,
-      dateFormat,
-    },
-  })
-  
-  .then(response => {
-    const results = response.data.map(game => {
+
+async function cacheData(req, res, next) {
+  const  key  = req.url;
+  let results;
+  try {
+    const cacheResults = await redisClient.get(key);
+    if (cacheResults) {
+      results = JSON.parse(cacheResults);
+      res.send({
+        fromCache: true,
+        data: results,
+      });
+    } else {
+      next();
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(404);
+  }
+}
+
+ 
+
+const fetchData = async () => {
+try{
+    const response = await axios.get(`https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?limit=2`, {
+      params: {
+        apiKey,
+         regions,
+         markets,
+        oddsFormat,
+        dateFormat,
+      },
+    });
+    console.log("Request sent to the API");
+    
+      const results = response.data.map(game => {
       game.bookmakers = game.bookmakers.map(bookmaker => {
         console.log("Before filtering:", bookmaker.markets);
         const filteredMarkets =  bookmaker.markets.filter(market => market.outcomes.length === 3);
@@ -101,35 +135,60 @@ function fetchData() {
     });
 
     console.log(prettyjson.render(results, options));
-    return results;
-  })
-  .catch(error => {
-    console.error('Error fetching odds:', error.message);
+    console.log(JSON.stringify(results));
+    
+   
+  } catch (error) {
+     console.error('Error fetching odds:', error.message);
     throw error;
-  });
+  }
 }
 
-// Schedule a job to run every 30 seconds and fetch data
-const job = schedule.scheduleJob('*/30 * * * * *', fetchData);
+
+
+
+
+// Schedule a job to run every 1hr and fetch data
+//const job = schedule.scheduleJob('*/1 * * * *', fetchData);
 
 // Your API route to fetch odds on demand
-app.get('/odds', async (req, res) => {
-  try {
+app.get('/odds', cacheData, fetchData,async (req, res) => {
+  // let results = [];
+const key = req.url;
+
+try {
+
     const results = await fetchData();
-   res.send(JSON.stringify(results));
+    let stringres = JSON.stringify(results);
+
+    await redisClient.set(key, stringres, {
+      EX: 3600,
+      NX: true,
+    });
+  res.status(200).send({
+  fromCache: false,
+  data: stringres
+ })
+ 
+  
+ 
     //broadcast to the front end 
     //res.send(result);
-    clients.get(req.cookies.id).send(results)
-    broadcast('oddsUpdate', results);
-  } catch (error) {
+  //  clients.get(req.cookies.id).send(results)
+    broadcast('oddsUpdate', stringres);
+}
+   catch (error) {
     res.status(500).json({ error: 'Failed to fetch odds' });
   }
-});
+}
+);
+
+
 const clients = new Map();
 // Handle WebSocket connections
 wss.on('connection', (ws,r) => {
-  const id = uuidv4();
-  clients.set(id, ws);
+ // const id = uuidv4();
+ // clients.set(id, ws);
   console.log('WebSocket client connected');
  
   // Handle messages from WebSocket clients if needed
