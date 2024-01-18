@@ -12,16 +12,51 @@ const Home = () => {
     // Create a WebSocket connection
     const socket = new WebSocket('ws://localhost:5000');
 
-    // Event listener for the 'message' event
     socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log("backend data ",data)
-      setOdds(data);
+      const parsedData = JSON.parse(event.data);
+      const { event: eventType, data } = parsedData;
+  
+      console.log('Received event:', eventType);
+  
+      if (eventType === 'oddsUpdate') {
+        console.log('Received odds update:', data);
+        setOdds(data);
+  
+        // Acknowledge the reception if needed
+        socket.send('Odds update received!');
+      } else {
+        console.log('Unknown event type:', eventType);
+      }
     };
+   /* socket.onmessage = (event) => {
+      const data = event.data;
 
+        // Check if the received data is a string (Welcome message)
+        if (typeof data === "string") {
+          console.log("Received non-JSON data:", data);
+          return;
+        }
+
+      try {
+        // Attempt to parse the received message as JSON
+        const jsonData = JSON.parse(data);
+
+        // Check if the parsed data is an array
+        if (Array.isArray(jsonData)) {
+          console.log("backend data ", jsonData);
+          setOdds(jsonData);
+        } else {
+          console.log("Received non-array data:", jsonData);
+        }
+      } catch (error) {
+        // Handle the error if parsing fails
+        console.error("Error parsing WebSocket message:", error);
+      }
+    };
+    */
     // Cleanup function to close the WebSocket connection when the component unmounts
     //return () => socket.close();
-  }, []);
+  }, [ odds]);
 
   return (
     <div>

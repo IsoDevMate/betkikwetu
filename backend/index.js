@@ -7,15 +7,12 @@ const port = process.env.PORT || 5000;
 const bodyParser = require('body-parser');
 var prettyjson = require('prettyjson');
 const schedule = require('node-schedule');
-//const wss = createServerFrom(http)
 const {createServer} = require('http')
 const {createServerFrom} = require('wss')
 const http = createServer()
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ noServer: true });
-
-
-
+const { v4: uuidv4 } = require('uuid');
 
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -34,10 +31,10 @@ var options = {
 
 
 // Broadcast function to send data to all connected clients
-function broadcast(data) {
+function broadcast(event, data) {
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(data));
+      client.send(JSON.stringify({ event, data }));
     }
   });
 }
@@ -90,10 +87,14 @@ function fetchData() {
       dateFormat,
     },
   })
+  
   .then(response => {
     const results = response.data.map(game => {
       game.bookmakers = game.bookmakers.map(bookmaker => {
-        bookmaker.markets = bookmaker.markets.filter(market => market.outcomes.length === 3);
+        console.log("Before filtering:", bookmaker.markets);
+        const filteredMarkets =  bookmaker.markets.filter(market => market.outcomes.length === 3);
+        bookmaker.markets = filteredMarkets.length > 0 ? filteredMarkets : bookmaker.markets;
+        console.log("After filtering:", bookmaker.markets);
         return bookmaker;
       });
       return game;
@@ -115,26 +116,29 @@ const job = schedule.scheduleJob('*/30 * * * * *', fetchData);
 app.get('/odds', async (req, res) => {
   try {
     const results = await fetchData();
-    res.status(200).json(results);
+   res.send(JSON.stringify(results));
     //broadcast to the front end 
-  
- 
+    //res.send(result);
+    clients.get(req.cookies.id).send(results)
+    broadcast('oddsUpdate', results);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch odds' });
   }
 });
-
+const clients = new Map();
 // Handle WebSocket connections
-wss.on('connection', (ws) => {
+wss.on('connection', (ws,r) => {
+  const id = uuidv4();
+  clients.set(id, ws);
   console.log('WebSocket client connected');
-
+ 
   // Handle messages from WebSocket clients if needed
   ws.on('message', (message) => {
     console.log(`Received message from client: ${message}`);
   });
-  broadcast(results);
+ 
   // Send a welcome message to the newly connected client
-  ws.send('Welcome to the WebSocket server!');
+  //ws.send('Welcome to the WebSocket server!');
 });
 
 // HTTP server with WebSocket upgrade support
