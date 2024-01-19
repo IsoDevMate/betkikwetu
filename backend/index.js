@@ -139,8 +139,9 @@ try{
     
    
   } catch (error) {
-     console.error('Error fetching odds:', error.message);
-    throw error;
+    console.error('Error fetching odds:', error.message);
+    // Return an appropriate response or handle the error gracefully
+    return { error: 'Failed to fetch odds' };
   }
 }
 
@@ -158,7 +159,12 @@ const key = req.url;
 
 try {
 
-    const results = await fetchData();
+    //const results = await fetchData();\
+    // Replace the following line
+// const results = await fetchData();
+
+const results = res.locals.data;
+
     let stringres = JSON.stringify(results);
 
     await redisClient.set(key, stringres, {
